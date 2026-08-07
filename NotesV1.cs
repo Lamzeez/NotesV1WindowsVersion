@@ -540,6 +540,34 @@ namespace NotesV1
                 return true;
             }
 
+            if (keyData == (Keys.Control | Keys.Back))
+            {
+                TextBox tb = Control.FromHandle(msg.HWnd) as TextBox;
+                if (tb != null && !tb.ReadOnly)
+                {
+                    int end = tb.SelectionStart;
+                    if (tb.SelectionLength > 0)
+                    {
+                        tb.SelectedText = "";
+                    }
+                    else if (end > 0)
+                    {
+                        int start = end;
+                        while (start > 0 && char.IsWhiteSpace(tb.Text[start - 1])) start--;
+                        bool isPunct = start > 0 && char.IsPunctuation(tb.Text[start - 1]);
+                        while (start > 0)
+                        {
+                            if (char.IsWhiteSpace(tb.Text[start - 1])) break;
+                            if (char.IsPunctuation(tb.Text[start - 1]) != isPunct) break;
+                            start--;
+                        }
+                        tb.Text = tb.Text.Remove(start, end - start);
+                        tb.SelectionStart = start;
+                    }
+                    return true;
+                }
+            }
+
             if (findPanel.Visible)
             {
                 if (keyData == Keys.Enter || keyData == (Keys.Shift | Keys.Enter))
@@ -737,30 +765,46 @@ namespace NotesV1
             
             Label lbl = new Label() { Text = labelText, AutoSize = true, Anchor = AnchorStyles.Left, Font = boldFont };
             TextBox txt = new TextBox() { Dock = DockStyle.Fill, Font = regFont };
+            
+            txt.Enter += (s, e) => {
+                if (Control.MouseButtons == MouseButtons.None)
+                {
+                    txt.SelectAll();
+                }
+            };
+            
             layout.RowCount++;
             layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             layout.Controls.Add(lbl, 0, layout.RowCount - 1);
             layout.Controls.Add(txt, 1, layout.RowCount - 1);
         }
         
+        private void ReplaceOrAdd(string replaceWhat, string withWhat)
+        {
+            for (int i = 0; i < layout.RowCount; i++)
+            {
+                Label l = layout.GetControlFromPosition(0, i) as Label;
+                if (l != null && l.Text == withWhat) return;
+                if (l != null && l.Text == replaceWhat)
+                {
+                    l.Text = withWhat;
+                    var tb = layout.GetControlFromPosition(1, i) as TextBox;
+                    if (tb != null) tb.Focus();
+                    return;
+                }
+            }
+            AddField(withWhat);
+            GetTextBoxes().Last().Focus();
+        }
+
         public void AddVisitor()
         {
-            foreach(Control c in layout.Controls) {
-                Label l = c as Label;
-                if (l != null && l.Text == "VisName:") return;
-            }
-            AddField("VisName:");
-            GetTextBoxes().Last().Focus();
+            ReplaceOrAdd("CompName:", "VisName:");
         }
         
         public void AddCompany()
         {
-            foreach(Control c in layout.Controls) {
-                Label l = c as Label;
-                if (l != null && l.Text == "CompName:") return;
-            }
-            AddField("CompName:");
-            GetTextBoxes().Last().Focus();
+            ReplaceOrAdd("VisName:", "CompName:");
         }
 
         public void AddPhone()
