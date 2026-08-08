@@ -57,7 +57,7 @@ namespace NotesV1
         }
     }
 
-    public class MainForm : Form
+    public partial class MainForm : Form, IMessageFilter
     {
         private TabControl tabControl;
         private Panel findPanel;
@@ -66,8 +66,24 @@ namespace NotesV1
         private int currentFindIndex = -1;
         public float CurrentFontSize { get; private set; }
 
+        public bool PreFilterMessage(ref Message m)
+        {
+            const int WM_MOUSEWHEEL = 0x020A;
+            if (m.Msg == WM_MOUSEWHEEL && Control.ModifierKeys == Keys.Control)
+            {
+                int delta = (short)(m.WParam.ToInt64() >> 16);
+                if (delta > 0) ChangeFontSize(1f);
+                else if (delta < 0) ChangeFontSize(-1f);
+                return true;
+            }
+            return false;
+        }
+
         public MainForm(string[] args = null)
         {
+            Application.AddMessageFilter(this);
+            this.FormClosed += (s, e) => Application.RemoveMessageFilter(this);
+
             CurrentFontSize = 9f;
             this.Text = "Notes V1";
             this.Size = new Size(600, 700);
@@ -643,29 +659,41 @@ namespace NotesV1
             UpdateFontsRecursive(this, newFont, newMono, newBold);
         }
 
+
+
         private void UpdateFontsRecursive(Control parent, Font regular, Font mono, Font bold)
         {
             foreach (Control c in parent.Controls)
             {
                 TextBoxBase tb = c as TextBoxBase;
                 Label l = c as Label;
+                RichTextBox rtb = c as RichTextBox;
+                
+                if (rtb != null)
+                {
+                    try { rtb.ZoomFactor = 1.0f; } catch { }
+                }
 
-                if (tb != null && tb.Multiline && parent is TabPage)
+                try
                 {
-                    c.Font = mono;
+                    if (tb != null && tb.Multiline && parent is TabPage)
+                    {
+                        c.Font = regular;
+                    }
+                    else if (l != null && l.Text.EndsWith(":"))
+                    {
+                        c.Font = bold;
+                    }
+                    else if (l != null && l.Text == "Save Tag")
+                    {
+                        c.Font = bold;
+                    }
+                    else
+                    {
+                        c.Font = regular;
+                    }
                 }
-                else if (l != null && l.Text.EndsWith(":"))
-                {
-                    c.Font = bold;
-                }
-                else if (l != null && l.Text == "Save Tag")
-                {
-                    c.Font = bold;
-                }
-                else
-                {
-                    c.Font = regular;
-                }
+                catch { }
                 
                 if (c is TileControl)
                 {
