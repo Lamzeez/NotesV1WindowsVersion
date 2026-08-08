@@ -655,14 +655,17 @@ namespace NotesV1
             Font newMono = new Font("Consolas", CurrentFontSize);
             Font newBold = new Font(this.Font.FontFamily, CurrentFontSize, FontStyle.Bold);
             
+            int labelWidth = TextRenderer.MeasureText("CompName:", newBold).Width + 10;
+            
+            this.SuspendLayout();
             this.Font = newFont;
-            UpdateFontsRecursive(this, newFont, newMono, newBold);
+            UpdateFontsRecursive(this, newFont, newMono, newBold, labelWidth);
+            this.ResumeLayout(true);
         }
 
-
-
-        private void UpdateFontsRecursive(Control parent, Font regular, Font mono, Font bold)
+        private void UpdateFontsRecursive(Control parent, Font regular, Font mono, Font bold, int labelWidth)
         {
+            parent.SuspendLayout();
             foreach (Control c in parent.Controls)
             {
                 TextBoxBase tb = c as TextBoxBase;
@@ -698,7 +701,6 @@ namespace NotesV1
                 if (c is TileControl)
                 {
                     TileControl tile = (TileControl)c;
-                    int labelWidth = TextRenderer.MeasureText("CompName:", bold).Width + 10;
                     if (tile.layout.ColumnStyles.Count > 0) {
                         tile.layout.ColumnStyles[0].Width = labelWidth;
                     }
@@ -706,9 +708,10 @@ namespace NotesV1
                 
                 if (c.HasChildren)
                 {
-                    UpdateFontsRecursive(c, regular, mono, bold);
+                    UpdateFontsRecursive(c, regular, mono, bold, labelWidth);
                 }
             }
+            parent.ResumeLayout(false);
         }
     }
 
