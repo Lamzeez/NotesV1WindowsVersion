@@ -174,7 +174,7 @@ namespace NotesV1
                                     for (int i = 0; i < tile.layout.RowCount; i++)
                                     {
                                         var lbl = tile.layout.GetControlFromPosition(0, i) as Label;
-                                        var tb = tile.layout.GetControlFromPosition(1, i) as RichTextBox;
+                                        var tb = tile.layout.GetControlFromPosition(1, i) as TextBox;
                                         if (lbl != null && tb != null)
                                             sw.WriteLine(string.Format("{0} {1}", lbl.Text, tb.Text));
                                     }
@@ -344,7 +344,7 @@ namespace NotesV1
                             for (int i = 0; i < tile.layout.RowCount; i++)
                             {
                                 var lbl = tile.layout.GetControlFromPosition(0, i) as Label;
-                                var tb = tile.layout.GetControlFromPosition(1, i) as RichTextBox;
+                                var tb = tile.layout.GetControlFromPosition(1, i) as TextBox;
                                 if (lbl != null && tb != null)
                                 {
                                     sw.WriteLine(string.Format("{0} {1}", lbl.Text, tb.Text));
@@ -409,9 +409,9 @@ namespace NotesV1
             }
         }
 
-        public List<RichTextBox> GetAllTextBoxes()
+        public List<TextBoxBase> GetAllTextBoxes()
         {
-            List<RichTextBox> list = new List<RichTextBox>();
+            List<TextBoxBase> list = new List<TextBoxBase>();
             if (tabControl.SelectedTab == null) return list;
             
             if (tabControl.SelectedTab.Controls.OfType<RichTextBox>().Any())
@@ -426,14 +426,14 @@ namespace NotesV1
                 {
                     foreach (TileControl tile in tracker.FlowPanel.Controls)
                     {
-                        list.AddRange(tile.GetTextBoxes());
+                        foreach (var t in tile.GetTextBoxes()) list.Add(t);
                     }
                 }
             }
             return list;
         }
 
-        private void MoveFocus(RichTextBox current, int direction)
+        private void MoveFocus(TextBoxBase current, int direction)
         {
             var tbs = GetAllTextBoxes();
             int idx = tbs.IndexOf(current);
@@ -485,7 +485,7 @@ namespace NotesV1
                 var tbs = GetAllTextBoxes();
                 if (tbs.Count == 0) return;
                 
-                int currIdx = tbs.IndexOf(focusedControl as RichTextBox);
+                int currIdx = tbs.IndexOf(focusedControl as TextBoxBase);
                 if (currIdx == -1) currIdx = currentFindIndex;
                 if (currIdx >= tbs.Count) currIdx = -1;
                 if (currIdx == -1) currIdx = direction > 0 ? -1 : 0;
@@ -580,7 +580,7 @@ namespace NotesV1
             
             if (tabControl.SelectedTab != null && tabControl.SelectedTab.Controls.OfType<TrackerControl>().Any())
             {
-                RichTextBox tb = Control.FromHandle(msg.HWnd) as RichTextBox;
+                TextBox tb = Control.FromHandle(msg.HWnd) as TextBox;
                 if (tb != null && tb.Parent != null)
                 {
                     TileControl tile = tb.Parent.Parent as TileControl;
@@ -647,7 +647,7 @@ namespace NotesV1
         {
             foreach (Control c in parent.Controls)
             {
-                RichTextBox tb = c as RichTextBox;
+                TextBoxBase tb = c as TextBoxBase;
                 Label l = c as Label;
 
                 if (tb != null && tb.Multiline && parent is TabPage)
@@ -773,7 +773,7 @@ namespace NotesV1
             Font regFont = new Font(ParentTracker.ParentForm.Font.FontFamily, ParentTracker.ParentForm.CurrentFontSize);
             
             Label lbl = new Label() { Text = labelText, AutoSize = true, Anchor = AnchorStyles.Left, Font = boldFont };
-            RichTextBox txt = new RichTextBox() { Dock = DockStyle.Fill, Font = regFont, Multiline = false, BorderStyle = BorderStyle.FixedSingle };
+            TextBox txt = new TextBox() { Dock = DockStyle.Fill, Font = regFont };
             
             txt.Enter += (s, e) => {
                 if (Control.MouseButtons == MouseButtons.None)
@@ -797,7 +797,7 @@ namespace NotesV1
                 if (l != null && l.Text == replaceWhat)
                 {
                     l.Text = withWhat;
-                    var tb = layout.GetControlFromPosition(1, i) as RichTextBox;
+                    var tb = layout.GetControlFromPosition(1, i) as TextBox;
                     if (tb != null) tb.Focus();
                     return;
                 }
@@ -836,12 +836,12 @@ namespace NotesV1
             GetTextBoxes().Last().Focus();
         }
         
-        public List<RichTextBox> GetTextBoxes()
+        public List<TextBox> GetTextBoxes()
         {
-            List<RichTextBox> list = new List<RichTextBox>();
+            List<TextBox> list = new List<TextBox>();
             for (int i = 0; i < layout.RowCount; i++)
             {
-                var tb = layout.GetControlFromPosition(1, i) as RichTextBox;
+                var tb = layout.GetControlFromPosition(1, i) as TextBox;
                 if (tb != null) list.Add(tb);
             }
             return list;
