@@ -667,6 +667,15 @@ namespace NotesV1
                     c.Font = regular;
                 }
                 
+                if (c is TileControl)
+                {
+                    TileControl tile = (TileControl)c;
+                    int labelWidth = TextRenderer.MeasureText("CompName:", bold).Width + 10;
+                    if (tile.layout.ColumnStyles.Count > 0) {
+                        tile.layout.ColumnStyles[0].Width = labelWidth;
+                    }
+                }
+                
                 if (c.HasChildren)
                 {
                     UpdateFontsRecursive(c, regular, mono, bold);
@@ -749,7 +758,11 @@ namespace NotesV1
             layout.AutoSize = true;
             layout.AutoSizeMode = AutoSizeMode.GrowAndShrink;
             layout.ColumnCount = 2;
-            layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 90));
+            
+            Font boldFont = new Font(ParentTracker.ParentForm.Font.FontFamily, ParentTracker.ParentForm.CurrentFontSize, FontStyle.Bold);
+            int labelWidth = TextRenderer.MeasureText("CompName:", boldFont).Width + 10;
+            
+            layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, labelWidth));
             layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             layout.Dock = DockStyle.Top;
             
