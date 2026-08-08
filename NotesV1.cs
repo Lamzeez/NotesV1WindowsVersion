@@ -69,15 +69,34 @@ namespace NotesV1
         private Timer zoomTimer;
         private float pendingZoomDelta = 0f;
 
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        public static extern int SendMessage(IntPtr hWnd, int wMsg, IntPtr wParam, IntPtr lParam);
+
         public bool PreFilterMessage(ref Message m)
         {
             const int WM_MOUSEWHEEL = 0x020A;
-            if (m.Msg == WM_MOUSEWHEEL && Control.ModifierKeys == Keys.Control)
+            if (m.Msg == WM_MOUSEWHEEL)
             {
-                int delta = (short)(m.WParam.ToInt64() >> 16);
-                if (delta > 0) QueueZoom(1f);
-                else if (delta < 0) QueueZoom(-1f);
-                return true;
+                if (Control.ModifierKeys == Keys.Control)
+                {
+                    int delta = (short)(m.WParam.ToInt64() >> 16);
+                    if (delta > 0) QueueZoom(1f);
+                    else if (delta < 0) QueueZoom(-1f);
+                    return true;
+                }
+                else if (Control.ModifierKeys == Keys.None)
+                {
+                    Control focused = Control.FromHandle(m.HWnd);
+                    if (focused is TextBox && tabControl != null && tabControl.SelectedTab != null)
+                    {
+                        var tracker = tabControl.SelectedTab.Controls.OfType<TrackerControl>().FirstOrDefault();
+                        if (tracker != null && tracker.FlowPanel != null)
+                        {
+                            SendMessage(tracker.FlowPanel.Handle, m.Msg, m.WParam, m.LParam);
+                            return true;
+                        }
+                    }
+                }
             }
             return false;
         }
