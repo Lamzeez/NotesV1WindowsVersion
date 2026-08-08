@@ -769,6 +769,10 @@ namespace NotesV1
             FlowPanel.AutoScroll = true;
             FlowPanel.FlowDirection = FlowDirection.TopDown;
             FlowPanel.WrapContents = false;
+            
+            typeof(Panel).GetProperty("DoubleBuffered", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).SetValue(FlowPanel, true, null);
+            FlowPanel.Scroll += (s, e) => { FlowPanel.Invalidate(); };
+            
             this.Controls.Add(FlowPanel);
             
             FlowPanel.SizeChanged += (s, e) => {
