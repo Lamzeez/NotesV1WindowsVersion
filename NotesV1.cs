@@ -66,23 +66,43 @@ namespace NotesV1
         private int currentFindIndex = -1;
         public float CurrentFontSize { get; private set; }
 
+        private Timer zoomTimer;
+        private float pendingZoomDelta = 0f;
+
         public bool PreFilterMessage(ref Message m)
         {
             const int WM_MOUSEWHEEL = 0x020A;
             if (m.Msg == WM_MOUSEWHEEL && Control.ModifierKeys == Keys.Control)
             {
                 int delta = (short)(m.WParam.ToInt64() >> 16);
-                if (delta > 0) ChangeFontSize(1f);
-                else if (delta < 0) ChangeFontSize(-1f);
+                if (delta > 0) QueueZoom(1f);
+                else if (delta < 0) QueueZoom(-1f);
                 return true;
             }
             return false;
+        }
+
+        private void QueueZoom(float delta)
+        {
+            pendingZoomDelta += delta;
+            zoomTimer.Stop();
+            zoomTimer.Start();
         }
 
         public MainForm(string[] args = null)
         {
             Application.AddMessageFilter(this);
             this.FormClosed += (s, e) => Application.RemoveMessageFilter(this);
+
+            zoomTimer = new Timer();
+            zoomTimer.Interval = 50;
+            zoomTimer.Tick += (s, e) => {
+                zoomTimer.Stop();
+                if (pendingZoomDelta != 0f) {
+                    ChangeFontSize(pendingZoomDelta);
+                    pendingZoomDelta = 0f;
+                }
+            };
 
             CurrentFontSize = 9f;
             this.Text = "Notes V1";
@@ -526,12 +546,12 @@ namespace NotesV1
         {
             if (keyData == (Keys.Control | Keys.Oemplus) || keyData == (Keys.Control | Keys.Add))
             {
-                ChangeFontSize(1f);
+                QueueZoom(1f);
                 return true;
             }
             if (keyData == (Keys.Control | Keys.OemMinus) || keyData == (Keys.Control | Keys.Subtract))
             {
-                ChangeFontSize(-1f);
+                QueueZoom(-1f);
                 return true;
             }
             if (keyData == (Keys.Control | Keys.Tab))
